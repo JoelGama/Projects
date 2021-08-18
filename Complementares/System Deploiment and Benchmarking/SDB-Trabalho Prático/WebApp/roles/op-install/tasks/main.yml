@@ -1,0 +1,143 @@
+---
+
+- name: Instalação de dependências
+  apt:
+    name:
+    - zlib1g-dev
+    - build-essential
+    - libssl-dev
+    - libreadline-dev
+    - libyaml-dev
+    - libgdbm-dev
+    - libncurses5-dev
+    - automake
+    - libtool
+    - bison
+    - libffi-dev
+    - git
+    - curl
+    - poppler-utils
+    - unrtf
+    - tesseract-ocr
+    - catdoc
+    - libxml2
+    - libxml2-dev
+    - libxslt1-dev
+    - postgresql
+    - postgresql-contrib
+    - libpq-dev
+    - apache2
+    - apache2-dev
+    - libcurl4-openssl-dev
+    - libapr1-dev
+    - libaprutil1-dev
+
+- name: Instalação do memcached
+  apt:
+    name: memcached
+
+- name: Download rbenv
+  git:
+    repo: https://github.com/sstephenson/rbenv.git
+    dest: /home/openproject/.rbenv
+  become: true
+  become_user: openproject
+
+- name: Set rbenv environment variables
+  blockinfile:
+    path: /home/openproject/.profile
+    block: |
+      export PATH="$HOME/.rbenv/bin:$PATH"
+      eval "$(rbenv init -)"
+    marker: "# {mark} RBENV ANSIBLE MANAGED BLOCK"
+
+- name: Download rbenv build
+  git:
+    repo: https://github.com/sstephenson/ruby-build.git
+    dest: /home/openproject/.rbenv/plugins/ruby-build
+  become: true
+  become_user: openproject
+
+- name: Install rbenv
+  shell:
+    cmd: . /home/openproject/.profile && rbenv install 2.6.1 -s && rbenv rehash && rbenv global 2.6.1
+    chdir: /home/openproject
+  become: true
+  become_user: openproject
+
+- name: Download nodenv repo
+  git:
+    repo: https://github.com/OiNutter/nodenv.git
+    dest: /home/openproject/.nodenv
+  become: true
+  become_user: openproject
+
+- name: Set nodenv environment variables
+  blockinfile:
+    path: /home/openproject/.profile
+    block: |
+      export PATH="$HOME/.nodenv/bin:$PATH"
+      eval "$(nodenv init -)"
+    marker: "# {mark} NODENV ANSIBLE MANAGED BLOCK"
+
+- name: Download nodenv build
+  git:
+    repo: git://github.com/OiNutter/node-build.git
+    dest: /home/openproject/.nodenv/plugins/node-build
+  become: true
+  become_user: openproject
+
+- name: Install nodenv
+  shell:
+    cmd: . /home/openproject/.profile && nodenv install 8.12.0 -s && nodenv rehash && nodenv global 8.12.0 && gem update --system
+    chdir: /home/openproject
+  become: true
+  become_user: openproject
+
+- name: Download OpenProject repo
+  git:
+    repo: https://github.com/opf/openproject-ce.git
+    dest: /home/openproject/openproject
+    version: stable/8
+    depth: 1
+  become: true
+  become_user: openproject
+
+- name: gem install bundler
+  gem:
+    name: bundler
+    executable: /home/openproject/.rbenv/shims/gem
+  become: true
+  become_user: openproject
+
+- name: bundle install --deployment --without mysql2 sqlite development test therubyracer docker
+  bundler:
+    exclude_groups:
+      - mysql2
+      - sqlite
+      - development
+      - test
+      - therubyracer
+      - docker
+    chdir: /home/openproject/openproject
+    deployment_mode: yes
+    executable: /home/openproject/.rbenv/shims/bundle
+  become: true
+  become_user: openproject
+
+# SE DER ERRO DEVE SER ISTO
+# ATENCAO: AO USAT NPM INSTALL FEZ UMA PERGUNTA
+
+- name: npm install
+  shell:
+    cmd: . /home/openproject/.profile && export NG_CLI_ANALYTICS=false && /home/openproject/.nodenv/shims/npm install
+    chdir: /home/openproject/openproject
+  become: true
+  become_user: openproject
+
+# - name: npm install
+#   npm:
+#     path: /home/openproject/openproject
+#     executable: /home/openproject/.nodenv/shims/npm
+#   become: true
+#   become_user: openproject

@@ -1,0 +1,43 @@
+
+# default configuration options for all environments
+default:
+  log_level: info
+
+  # Outgoing emails configuration (see examples above)
+  email_delivery_method: :smtp
+  smtp_address: smtp.mailtrap.io
+  smtp_port: 2525
+  smtp_domain: smtp.mailtrap.io
+  smtp_user_name: 704d1b6a04e875
+  smtp_password: b6846ee6a2dcd6
+  smtp_enable_starttls_auto: true
+  smtp_authentication: plain
+
+
+  # whether to force ssl in production
+  rails_force_ssl: false
+
+  # If enabled a user's password cannot be set to an arbitrary value.
+  # The respective form elements will be removed from the user edit view.
+  # Instead, if the password needs to be changed, a random, temporary password can be
+  # generated and sent to the user who then has to change their password upon login.
+  disable_password_choice: false
+
+
+
+
+# specific configuration options for production environment
+# that overrides the default ones
+production:
+  log_level: warn
+
+# specific configuration options for development environment
+# that overrides the default ones
+development:
+  email_delivery_method: :letter_opener
+
+# Configuration for the test environment
+test:
+  email_delivery_method: :test
+
+rails_cache_store: :memcache

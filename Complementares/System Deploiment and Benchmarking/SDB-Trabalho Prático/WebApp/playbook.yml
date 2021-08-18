@@ -1,0 +1,62 @@
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  roles:
+    - role: gcp
+      vars:
+        gcp_zone: europe-west1-b
+        gcp_region: europe-west1
+        gcp_project: 70630190145
+        gcp_cred_kind: serviceaccount
+        gcp_cred_file: ~/avaliacao.json
+        gcp_machine_type: n1-standard-4
+        source_image: projects/ubuntu-os-cloud/global/images/ubuntu-1604-xenial-v20191113
+        disk_size: 12
+        disks:
+          - disk-11
+          - disk-12
+          - disk-13
+          - disk-14
+        addresses:
+          - addr-11
+          - addr-12
+          - addr-13
+          - addr-14
+        instances:
+          - { index: 1, tag: elakibb }
+          - { index: 2, tag: dbb }
+          - { index: 3, tag: appp }
+          - { index: 4, tag: web }
+
+- hosts: localhost
+  tasks:
+    - debug: var=hostvars[groups['dbb'][0]].networkInterfaces[0].networkIP
+    - debug: var=hostvars[groups['elakibb'][0]].networkInterfaces[0].networkIP
+
+- hosts: elakibb
+  become: yes
+  roles:
+    - Elastic
+    - Kibana
+    - apache
+
+- hosts: dbb
+  become: yes
+  roles:
+    - {role: psql, addresses: '*'}
+    - Metricbeat
+
+- hosts: appp
+  become: yes
+  roles:
+    - users
+    - op-install
+    - { role: op-config&start, db_addr: "{{ groups['dbb'][0] }}" } 
+    - instalation
+    - Metricbeat
+
+- hosts: web
+  become: yes
+  roles:
+    - apacheNormal
+    - Metricbeat

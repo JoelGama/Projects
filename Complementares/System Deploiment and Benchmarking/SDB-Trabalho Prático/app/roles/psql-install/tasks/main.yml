@@ -1,0 +1,78 @@
+---
+    
+- name: PSQL Instalation
+  apt:
+    name:
+    - python-pip
+    - postgresql
+    - postgresql-contrib
+    - libpq-dev
+    - postgresql-9.5-pgpool2
+    - iputils-arping
+
+- name: PSQL Python Dependencies
+  pip:
+    name: psycopg2
+
+
+
+
+
+
+- name: Copy postgresql.conf
+  copy:
+    src: postgresql.conf
+    dest: /etc/postgresql/9.5/main/ 
+    owner: postgres
+    group: postgres
+    mode: 0744
+  notify:
+    - restart postgresql
+
+
+- name: Ensure service is enabled and started
+  service:
+    name: postgresql
+    state: restarted
+    enabled: yes
+
+
+
+- name: Copy psql configuration scripts
+  copy:
+    src: replscripts/
+    dest: /etc/postgresql/9.5/main/replscripts/
+    group: postgres
+    owner: postgres
+    mode: 0744
+
+
+- name: Copy psql configuration templates
+  copy:
+    src: repltemplates/
+    dest: /etc/postgresql/9.5/main/repltemplates/
+    owner: postgres
+    mode: 0744 
+
+
+- name: Add pg_hba.conf line to allow access from network
+  template:
+    src: pg_hba.conf.j2
+    dest: "/etc/postgresql/9.5/main/pg_hba.conf"
+
+
+
+
+- name: Set postgres password
+  become: true
+  become_user: postgres
+  postgresql_user:
+    user: postgres
+    password: postgres
+    port: 5433
+
+- name: sudo without password for postgres
+  copy:
+    content: '%postgres ALL=(ALL:ALL) NOPASSWD:ALL'
+    dest: /etc/sudoers.d/postgres_nopasswd
+    mode: 0440

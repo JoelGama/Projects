@@ -1,0 +1,14 @@
+plugin: gcp_compute
+projects:
+  - 70630190145
+zones:
+  - europe-west2-a
+filters:
+
+keyed_groups:
+  - prefix: ''
+    separator: ''
+    key: tags['items']
+
+auth_kind: serviceaccount
+service_account_file: ~/avaliacao.json

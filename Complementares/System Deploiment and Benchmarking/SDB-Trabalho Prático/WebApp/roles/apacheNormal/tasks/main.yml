@@ -1,0 +1,16 @@
+---
+- name: Installing Apache - parte I
+  apt:
+    name:
+      - apache2
+
+- name: Installing Apache - parte I
+  shell:
+    cmd: |
+          a2enmod proxy
+          a2enmod proxy_http
+
+- name: Restart apache2 
+  service:
+   name: apache2
+   state: restarted

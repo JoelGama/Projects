@@ -1,0 +1,44 @@
+---
+
+- debug: var=hostvars[groups['elakib'][0]].networkInterfaces[0].networkIP
+
+- name: Download do metricbeat
+  get_url:
+    url: https://artifacts.elastic.co/downloads/beats/metricbeat/metricbeat-7.4.2-linux-x86_64.tar.gz
+    dest: /home/
+  become: yes
+
+- name: Unzip do metricbeat
+  unarchive:
+    src: /home/metricbeat-7.4.2-linux-x86_64.tar.gz
+    dest: /home/
+    remote_src: yes
+  become: yes
+
+- name: Configure Kibana
+  replace:
+    path: "/home/metricbeat-7.4.2-linux-x86_64/metricbeat.yml"
+    after: 'setup.kibana:'
+    regexp: '#host: \"localhost:5601\"'
+    replace: "host: \"{{hostvars[groups['elakib'][0]].networkInterfaces[0].networkIP}}:5601\""
+  become: yes
+
+- name: Configure ElasticSearch
+  replace:
+    path: "/home/metricbeat-7.4.2-linux-x86_64/metricbeat.yml"
+    after: 'output.elasticsearch'
+    regexp: 'hosts: \[\"localhost:9200\"\]'
+    replace: "hosts: [\"{{hostvars[groups['elakib'][0]].networkInterfaces[0].networkIP}}:9200\"]"
+  become: yes
+
+#- name: Setup metricbeat
+#  shell: "./metricbeat setup"
+#  args:
+#    chdir: "/home/metricbeat-7.4.2-linux-x86_64"
+#  become: yes
+
+#- name: Iniciar metricbeat
+#  shell: "./metricbeat -e"
+#  args:
+#    chdir: "/home/metricbeat-7.4.2-linux-x86_64"
+#  become: yes

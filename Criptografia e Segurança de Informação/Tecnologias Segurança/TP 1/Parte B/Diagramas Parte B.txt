@@ -1,0 +1,19 @@
+DFD:
+
+	- A partir do Diagrama de Fluxo de Dados podemos verificar a forma como os dados fluem pelo sistema.
+	- Através deste diagrama já é possível identificar algumas ameaças, com foco nos componentes usados no sistema, como por exemplo, falsificação de dados ou alterações no hardware.
+
+SLD:
+	* Sensor - Gateway
+		- O primeira contacto entre processos do sistema acontece entre os Wireless sensors e o Gateway. Ésta comunicação é fundamental, pois é ela que realiza o envio das informações captadas sobre o estado atual da cultura para o sistema. O Gateway, depois de confirmar a receção dos dados, pode ainda enviar novas operações para o sensor, como medir outras características da cultura.
+
+	* Actuador - Gateway
+		- O Gateway envia novos protocolos para o Actuator, ou seja, altera a resposta da cultura para uma determinada situação.
+
+	* Cloud - Gateway
+		- Diagrama representativo da interação entre a Cloud e o Gateway. Periodicamente, o Gateway envia um resumo dos dados coletados pelos sensores para a Cloud, para que estes sejam armazenados e analisados. A Cloud, de acordo com os dados recebidos, pode enviar novos protocolos para o Gateway que são depois enviados aos Actuators.
+
+	* Cloud - Dashboard
+		- O diagrama representa a interaçãoo entre a Cloud e a Dashboard. Quando um utilizador necessita de dados relativamente ao sistema, é enviado um pedido à Cloud, que envia os dados pedidos.
+
+

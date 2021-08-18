@@ -1,0 +1,32 @@
+---
+- name: Installing Apache - parte I
+  apt:
+    name:
+      - apache2
+
+- name: Installing Apache - parte I
+  shell:
+    cmd: |
+          a2enmod proxy
+          a2enmod proxy_http
+
+- name: Restart apache2 
+  service:
+   name: apache2
+   state: restarted
+
+- name: Configure Apache2
+  blockinfile:
+    path: "/etc/apache2/sites-enabled/000-default.conf"
+    insertafter: "</VirtualHost>"
+    block: |
+      <Location /kibana/>
+        ProxyPass http://localhost:5601/
+        ProxyPassReverse http://localhost:5601/
+      </Location>
+  become: yes
+
+- name: Restart apache2 
+  service:
+   name: apache2
+   state: restarted

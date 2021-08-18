@@ -1,0 +1,110 @@
+---
+
+- name: Configure OpenProject 1
+  copy:
+    src: /home/openproject/openproject/config/database.yml.example
+    dest: /home/openproject/openproject/config/database.yml
+    remote_src: yes
+  become: true
+  become_user: openproject
+
+- name: Config database connection
+  replace:
+    regexp: '^production.*\n(\s+.*\n*)*'
+    path: /home/openproject/openproject/config/database.yml
+    replace: "{{ lookup('template','db-conn.j2') }}"
+
+# - name: Config database connection
+#   replace:
+#     regexp: '^production.*\n(\s+.*\n*)*'
+#     path: /home/openproject/openproject/config/database.yml
+#     replace: |
+#       production:
+#         adapter: postgresql
+#         encoding: unicode
+#         database: openproject
+#         host: localhost
+#         pool: 5
+#         username: openproject
+#         password: openproject
+
+- name: Configure OpenProject 2
+  copy:
+    src: /home/openproject/openproject/config/configuration.yml.example
+    dest: /home/openproject/openproject/config/configuration.yml
+    remote_src: yes
+  become: true
+  become_user: openproject
+
+- name: Config email connection and memcached
+  blockinfile:
+    insertbefore: BOF
+    marker: "# {mark} EMAIL CONFIG ANSIBLE MANAGED BLOCK"
+    path: /home/openproject/openproject/config/configuration.yml
+    block: |
+      production:                          #main level
+        email_delivery_method: :smtp       #settings for the production environment
+        smtp_address: smtp.mailtrap.io
+        smtp_port: 2525
+        smtp_domain: smtp.mailtrap.io
+        smtp_user_name: 704d1b6a04e875
+        smtp_password: b6846ee6a2dcd6
+        smtp_enable_starttls_auto: true
+        smtp_authentication: plain
+
+      rails_cache_store: :memcache
+
+## precompile vai falhar; fazer apt-get remove nodejs 
+
+- name: Remove conflicting nodejs 
+  apt:
+    name: nodejs
+    state: absent
+
+# echo "export PATH=$HOME/.rbenv/shims:$PATH" >> ~/.profile &&
+- name: Setup the database
+  shell:
+    cmd: |
+         . ~/.profile &&
+         echo "export SECRET_KEY_BASE=$(./bin/rake secret)" >> ~/.profile &&
+         . ~/.profile &&
+         echo "export SECRET_KEY_BASE=$(./bin/rake secret)" >> ~/.profile &&
+         RAILS_ENV="production" ./bin/rake db:create &&
+         RAILS_ENV="production" ./bin/rake db:migrate &&
+         RAILS_ENV="production" ./bin/rake db:seed &&
+         RAILS_ENV="production" ./bin/rake assets:precompile
+    chdir: /home/openproject/openproject
+  become: true
+  become_user: openproject
+
+- name: Define SECRET_KEY_BASE
+  shell:
+    cmd: |
+         . /home/openproject/.profile &&
+         echo "export SECRET_KEY_BASE=$SECRET_KEY_BASE" >> /etc/apache2/envvars
+    chdir: /home/openproject/openproject
+
+- name: chmod /home/openproject
+  file:
+    path: /home/openproject
+    mode: o+x
+
+- name: Copy openproject.conf
+  copy:
+    dest: /etc/apache2/sites-available/openproject.conf
+    src: openproject.conf
+
+- name: Add Passenger to PATH and enable site OpenProject
+  shell:
+    cmd: export PATH="/home/openproject/.gem/ruby/2.6.0/gems/passenger-6.0.4/bin:$PATH" && a2dissite 000-default && a2ensite openproject
+
+- name: Create a symbolic link
+  file:
+    src: /etc/apache2/mods-available/expires.load
+    dest: /etc/apache2/mods-enabled/expires.load
+    state: link
+
+- name: Restart apache2
+  service:
+    name: apache2
+    state: restarted

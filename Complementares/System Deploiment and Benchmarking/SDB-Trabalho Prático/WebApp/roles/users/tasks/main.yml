@@ -1,0 +1,16 @@
+---
+
+- name: Create a group for openproject
+  group:
+    name: openproject
+- name: Create an user for openproject
+  user:
+    name: openproject
+    create_home: True
+    group: openproject
+    password: "{{ lookup('file', 'hashed_password') }}"
+- name: Create an user for passenger 
+  user: 
+    name: web 
+    create_home: True 
+    

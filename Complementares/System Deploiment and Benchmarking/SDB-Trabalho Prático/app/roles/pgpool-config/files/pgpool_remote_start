@@ -1,0 +1,23 @@
+#!/bin/bash
+# By Fat Dragon, 05/25/2016
+# Starts PostgreSQL at remote server.
+ 
+if [ $# -ne 2 ]
+then
+    echo "pgpool_remote_start remote_host remote_datadir"
+    exit 1
+fi
+ 
+REMOTE_HOST=$1
+REMOTE_DATADIR=$2
+ 
+echo "pgpool_remote_start - REMOTE_HOST: ${REMOTE_HOST}; at $(date)\n" >> /etc/postgresql/9.5/main/replscripts/exec.log
+ 
+if [ $UID -eq 0 ]
+then
+	sudo -u postgres ssh -T postgres@$REMOTE_HOST service postgresql start
+else
+	ssh -T postgres@$REMOTE_HOST service postgresql start
+fi
+ 
+exit 0

@@ -1,0 +1,41 @@
+---
+
+- name: Download do kibana
+  get_url:
+    url: https://artifacts.elastic.co/downloads/kibana/kibana-7.4.2-linux-x86_64.tar.gz
+    dest: /home/monitor/
+  become_user: monitor
+
+- name: Unzip do kibana
+  unarchive: 
+    src: /home/monitor/kibana-7.4.2-linux-x86_64.tar.gz 
+    dest: /home/monitor/
+    remote_src: yes
+  become_user: monitor
+
+- name: Configurar kibana server host
+  replace:
+    path: "/home/monitor/kibana-7.4.2-linux-x86_64/config/kibana.yml"
+    regexp: '^#server.host: \"localhost\"'
+    replace: 'server.host: "0.0.0.0"'
+  become_user: monitor
+
+- name: Configurar kibana server basePath
+  replace:
+    path: "/home/monitor/kibana-7.4.2-linux-x86_64/config/kibana.yml"
+    regexp: '^#server.basePath: \"\"'
+    replace: 'server.basePath: "/kibana"'
+  become_user: monitor
+
+- name: Configurar kibana server rewriteBasePath
+  replace:
+    path: "/home/monitor/kibana-7.4.2-linux-x86_64/config/kibana.yml"
+    regexp: '^#server.rewriteBasePath: false'
+    replace: 'server.rewriteBasePath: false'
+  become_user: monitor
+
+#- name: Iniciar kibana
+#  shell: "./kibana &"
+#  args:
+#    chdir: "/home/monitor/kibana-7.4.2-linux-x86_64/bin/"
+#  become_user: monitor

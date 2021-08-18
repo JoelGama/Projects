@@ -1,0 +1,434 @@
+---
+    
+
+- name: Create an user for pgpool2 
+  user: 
+    name: bd 
+    create_home: True 
+
+- name: Download pgpool
+  get_url: 
+    url: http://www.pgpool.net/download.php?f=pgpool-II-3.5.2.tar.gz 
+    dest: /home/bd/pgpool-II-3.5.2.tar.gz  
+  become: yes 
+  become_user: bd
+
+- name: Unzip pgpool 
+  unarchive: 
+    src: /home/bd/pgpool-II-3.5.2.tar.gz 
+    dest: /home/bd/
+    remote_src: yes  
+  become: yes 
+  become_user: bd
+
+- name: Remove tarball 
+  shell:
+    cmd: |
+          rm /home/bd/pgpool-II-3.5.2.tar.gz 
+
+- name: Configuring pgpool 
+  shell:
+    cmd: ./configure --prefix=/usr/share/pgpool2/3.5.2
+    chdir: /home/bd/pgpool-II-3.5.2/
+  become: true 
+  become_method: sudo
+
+- name: Make pgpool 
+  shell:
+    cmd: make 
+    chdir: /home/bd/pgpool-II-3.5.2/
+
+- name: Make install pgpool 
+  shell: 
+    cmd: make install 
+    chdir: /home/bd/pgpool-II-3.5.2/ 
+
+- name: Create /etc/pgpool2/3.5.2 directory 
+  file:
+    path: /etc/pgpool2/3.5.2/
+    state: directory
+    mode: '0777'    # dá permissões a todos
+  become: true
+
+- name: Move files to new configuration directory
+  shell:
+    cmd: |
+          mv /usr/share/pgpool2/3.5.2/etc/pcp.conf.sample /etc/pgpool2/3.5.2/ 
+          mv /usr/share/pgpool2/3.5.2/etc/pgpool.conf.sample /etc/pgpool2/3.5.2/ 
+          mv /usr/share/pgpool2/3.5.2/etc/pgpool.conf.sample-master-slave /etc/pgpool2/3.5.2/ 
+          mv /usr/share/pgpool2/3.5.2/etc/pgpool.conf.sample-replication /etc/pgpool2/3.5.2/
+          mv /usr/share/pgpool2/3.5.2/etc/pgpool.conf.sample-stream /etc/pgpool2/3.5.2/ 
+          mv /usr/share/pgpool2/3.5.2/etc/pool_hba.conf.sample /etc/pgpool2/3.5.2/ 
+
+- name: Move binary files to new installation directory 
+  shell:
+    cmd: |
+          mv /usr/share/pgpool2/3.5.2/bin/pcp_attach_node /usr/sbin/ 
+          mv /usr/share/pgpool2/3.5.2/bin/pcp_detach_node /usr/sbin/ 
+          mv /usr/share/pgpool2/3.5.2/bin/pcp_node_count /usr/sbin/ 
+          mv /usr/share/pgpool2/3.5.2/bin/pcp_node_info /usr/sbin/ 
+          mv /usr/share/pgpool2/3.5.2/bin/pcp_pool_status /usr/sbin/ 
+          mv /usr/share/pgpool2/3.5.2/bin/pcp_proc_count /usr/sbin/ 
+          mv /usr/share/pgpool2/3.5.2/bin/pcp_proc_info /usr/sbin/ 
+          mv /usr/share/pgpool2/3.5.2/bin/pcp_promote_node /usr/sbin/
+          mv /usr/share/pgpool2/3.5.2/bin/pcp_recovery_node /usr/sbin/ 
+          mv /usr/share/pgpool2/3.5.2/bin/pcp_stop_pgpool /usr/sbin/ 
+          mv /usr/share/pgpool2/3.5.2/bin/pcp_watchdog_info /usr/sbin/ 
+          mv /usr/share/pgpool2/3.5.2/bin/pg_md5 /usr/sbin/ 
+          mv /usr/share/pgpool2/3.5.2/bin/pgpool /usr/sbin/
+
+- name: Create SQL scripts directory
+  file:
+    path: /etc/postgresql/9.5/main/sql
+    state: directory
+    mode: '0777'    # dá permissões a todos
+  become: true
+
+- name: Copy the first script
+  copy:
+    src: /home/bd/pgpool-II-3.5.2/src/sql/insert_lock.sql 
+    dest: /etc/postgresql/9.5/main/sql/
+    remote_src: yes
+    #owner: postgres 
+    mode: 0744 
+
+- name: Copy pgpool_adm extension
+  copy:
+    src: /home/bd/pgpool-II-3.5.2/src/sql/pgpool_adm/pgpool_adm.control
+    dest: /usr/share/postgresql/9.5/extension/
+    remote_src: yes
+    #owner: postgres 
+    mode: 0744
+
+- name: Copy pgpool_adm--1.0 
+  copy:
+    src: /home/bd/pgpool-II-3.5.2/src/sql/pgpool_adm/pgpool_adm--1.0.sql
+    dest: /usr/share/postgresql/9.5/extension/
+    remote_src: yes
+    #owner: postgres 
+    mode: 0744 
+
+- name: Copy SQL script file and extension change pgpool_adm
+  copy:
+    src: /home/bd/pgpool-II-3.5.2/src/sql/pgpool_adm/pgpool_adm.sql.in
+    dest: /etc/postgresql/9.5/main/sql/pgpool_adm.sql
+    remote_src: yes
+    #owner: postgres 
+    mode: 0744 
+
+- name: Copy pgpool-recovery extension
+  copy:
+    src: /home/bd/pgpool-II-3.5.2/src/sql/pgpool-recovery/pgpool_recovery.control
+    dest: /usr/share/postgresql/9.5/extension/
+    remote_src: yes
+    #owner: postgres 
+    mode: 0744  
+
+- name: Copy pgpool-recovery 1.1 sql
+  copy:
+    src: /home/bd/pgpool-II-3.5.2/src/sql/pgpool-recovery/pgpool_recovery--1.1.sql
+    dest: /usr/share/postgresql/9.5/extension/
+    remote_src: yes
+    #owner: postgres 
+    mode: 0744  
+
+- name: Copy SQL script files pgpool-recovery
+  copy:
+    src: /home/bd/pgpool-II-3.5.2/src/sql/pgpool-recovery/pgpool-recovery.sql.in
+    dest: /etc/postgresql/9.5/main/sql/pgpool-recovery.sql
+    remote_src: yes
+    #owner: postgres 
+    mode: 0744   
+
+- name: Copy SQL script files uninstall pgpool recovery
+  copy:
+    src: /home/bd/pgpool-II-3.5.2/src/sql/pgpool-recovery/uninstall_pgpool-recovery.sql
+    dest: /etc/postgresql/9.5/main/sql/
+    remote_src: yes
+    #owner: postgres 
+    mode: 0744   
+
+- name: Copy pgpool-regclass extension
+  copy:
+    src: /home/bd/pgpool-II-3.5.2/src/sql/pgpool-regclass/pgpool_regclass.control
+    dest: /usr/share/postgresql/9.5/extension/
+    remote_src: yes
+    #owner: postgres 
+    mode: 0744    
+
+- name: Copy pgpool-regclass 1.1 sql
+  copy:
+    src: /home/bd/pgpool-II-3.5.2/src/sql/pgpool-regclass/pgpool_regclass--1.0.sql
+    dest: /usr/share/postgresql/9.5/extension/
+    remote_src: yes
+    #owner: postgres 
+    mode: 0744     
+
+- name: Copy pgpool-regclass sql in
+  copy:
+    src: /home/bd/pgpool-II-3.5.2/src/sql/pgpool-regclass/pgpool-regclass.sql.in
+    dest: /etc/postgresql/9.5/main/sql/pgpool-regclass.sql
+    remote_src: yes
+    #owner: postgres 
+    mode: 0744    
+
+- name: Copy uninstall_pgpool-recovery sql
+  copy:
+    src: /home/bd/pgpool-II-3.5.2/src/sql/pgpool-regclass/uninstall_pgpool-regclass.sql
+    dest: /etc/postgresql/9.5/main/sql/
+    remote_src: yes
+    #owner: postgres 
+    mode: 0744    
+
+- name: Remove pgpool
+  file:
+    state: absent
+    path: /home/bd/pgpool-II-3.5.2/ 
+  become: true
+
+- name: Copy insert_lock changed sql script
+  copy:
+    src: new_sql_scripts/insert_lock.sql
+    dest: /etc/postgresql/9.5/main/sql
+    #owner: postgres 
+    mode: 0744     
+
+- name: Copy pgpool_adm changed sql script
+  copy:
+    src: new_sql_scripts/pgpool_adm.sql
+    dest: /etc/postgresql/9.5/main/sql/
+    #owner: postgres 
+    mode: 0744  
+
+- name: Copy pgpool-recovery changed sql script
+  copy:
+    src: new_sql_scripts/pgpool-recovery.sql
+    dest: /etc/postgresql/9.5/main/sql/
+    #owner: postgres 
+    mode: 0744  
+
+- name: Copy pgpool-regclass changed sql script
+  copy:
+    src: new_sql_scripts/pgpool-regclass.sql
+    dest: /etc/postgresql/9.5/main/sql/
+    #owner: postgres 
+    mode: 0744 
+
+- name: Copy uninstall_pgpool-recovery changed sql script
+  copy:
+    src: new_sql_scripts/uninstall_pgpool-recovery.sql
+    dest: /etc/postgresql/9.5/main/sql/
+    #owner: postgres 
+    mode: 0744  
+
+- name: Copy uninstall_pgpool-regclass changed sql script
+  copy:
+    src: new_sql_scripts/uninstall_pgpool-regclass.sql
+    dest: /etc/postgresql/9.5/main/sql/
+    #owner: postgres
+    mode: 0744   
+
+
+
+
+
+- name: Define postgres as owner
+  shell:
+    cmd: chown postgres:postgres -R /etc/postgresql/9.5/main/sql
+
+
+
+
+
+
+- name: Copy pgpool defaults file
+  copy:
+    src: service_script/pgpool2_default
+    dest: /etc/default/pgpool2
+    #owner: postgres 
+    mode: 0755    
+  become: true  
+
+
+- name: Copy pgpool service script
+  copy:
+    src: service_script/pgpool2
+    dest: /etc/init.d/pgpool2
+    #owner: postgres 
+    mode: 0755    
+  become: true  
+
+
+- name: Change file permissions 
+  shell:
+    cmd: chmod +x /etc/default/pgpool2 & chmod +x /etc/init.d/pgpool2
+
+
+
+
+- name: Register service pgpool2
+  shell:
+    cmd: update-rc.d pgpool2 defaults 
+
+
+- name: Disable service pgpool2
+  shell:
+    cmd: update-rc.d pgpool2 disable 
+
+
+
+
+
+
+
+
+
+
+
+- name: Install pgpool-recovery extension
+  shell:
+    cmd: psql -f pgpool-recovery.sql template1 
+    chdir: /etc/postgresql/9.5/main/sql/
+  become: true
+  become_user: postgres
+
+- name: Install pgpool_adm extension
+  shell:
+    cmd: psql -f pgpool_adm.sql template1
+    chdir: /etc/postgresql/9.5/main/sql/
+  become: true
+  become_user: postgres
+
+
+
+
+
+- name: Copy failover.sh
+  copy:
+    src: failover.sh
+    dest: /etc/pgpool2/3.5.2/failover.sh
+    owner: postgres
+    group: postgres
+    mode: 0700
+
+
+- name: Copy recovery_1st_stage.sh
+  copy:
+    src: recovery_1st_stage.sh
+    dest: /var/lib/postgresql/9.5/main/recovery_1st_stage.sh
+    owner: postgres
+    group: postgres
+    mode: 0700
+
+
+- name: Copy pgpool_remote_start
+  copy:
+    src: pgpool_remote_start
+    dest: /var/lib/postgresql/9.5/main/pgpool_remote_start
+    owner: postgres
+    group: postgres
+    mode: 0700
+
+
+# user admin com password admin
+- name: Copy pcp.conf
+  copy:
+    src: pcp.conf
+    dest: /etc/pgpool2/3.5.2/pcp.conf
+    # owner: postgres
+    # group: postgres
+    # mode: 0700
+
+
+
+- name: Add pgpool.conf
+  template:
+    src: pgpool.conf.j2
+    dest: "/etc/pgpool2/3.5.2/pgpool.conf"
+
+
+
+# - name: Copy /bin/ip_w
+#   copy:
+#     src: ip_w
+#     dest: /bin/ip_w
+#     owner: postgres
+#     mode: 0755
+
+# - name: Copy /usr/bin/arping_w
+#   copy:
+#     src: arping_w
+#     dest: /usr/bin/arping_w
+#     owner: postgres
+#     mode: 0755
+
+
+
+
+
+- name: Ensure service is enabled and started
+  service:
+    name: postgresql
+    state: restarted
+    enabled: yes
+  when: ansible_hostname != hostvars[groups['pgpool'][0]].name
+
+
+
+- name: Setup master
+  shell:
+    cmd: /etc/postgresql/9.5/main/replscripts/promote.sh -f -p replicationpassword
+  become: true
+  become_user: postgres
+  when: ansible_hostname == hostvars[groups['db'][0]].name
+
+- name: Setup slave
+  shell:
+    cmd: /etc/postgresql/9.5/main/replscripts/initiate_replication.sh -f -H {{hostvars[groups['db'][0]].name}} -P 5433 -p replicationpassword
+  become: true
+  become_user: postgres
+  when: ansible_hostname != hostvars[groups['db'][0]].name and ansible_hostname != hostvars[groups['pgpool'][0]].name
+
+
+
+
+
+
+
+- name: update-rc.d pgpool2 enable
+  shell:
+    cmd: update-rc.d pgpool2 enable
+  when: ansible_hostname == hostvars[groups['pgpool'][0]].name
+
+- name: Ensure pgpool is enabled and started
+  service:
+    name: pgpool2
+    state: started
+    enabled: yes
+  when: ansible_hostname == hostvars[groups['pgpool'][0]].name
+
+
+
+
+
+
+
+
+- name: Create database user
+  become: true
+  become_user: postgres
+  postgresql_user:
+    name: openproject
+    password: openproject
+    role_attr_flags: SUPERUSER
+    port: 5433
+  when: ansible_hostname == hostvars[groups['db'][0]].name
+
+- name: Create database
+  become: true
+  become_user: postgres
+  postgresql_db:
+    owner: openproject
+    name: openproject
+    port: 5433
+  when: ansible_hostname == hostvars[groups['db'][0]].name

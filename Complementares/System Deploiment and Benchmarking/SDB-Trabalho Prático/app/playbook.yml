@@ -1,0 +1,60 @@
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  roles:
+    - role: gcp
+      vars:
+        gcp_zone: europe-west2-a
+        gcp_region: europe-west2
+        gcp_project: 70630190145
+        gcp_cred_kind: serviceaccount
+        gcp_cred_file: ~/avaliacao.json
+        gcp_machine_type: n1-standard-4
+        source_image: projects/ubuntu-os-cloud/global/images/ubuntu-1604-xenial-v20191113
+        disk_size: 12
+        disks:
+          - disk-01
+          - disk-02
+          - disk-03
+          - disk-04
+          - disk-05
+        addresses:
+          - addr-01
+          - addr-02
+          - addr-03
+          - addr-04
+          - addr-05
+        instances:
+          - { index: 1, tag: elakib }
+          - { index: 2, tag: [db,be] }
+          - { index: 3, tag: [db,be] }
+          - { index: 4, tag: [pgpool,be] }
+          - { index: 5, tag: app }
+
+# - hosts: localhost
+#   tasks:
+#     - debug: var=hostvars[groups['db'][0]].networkInterfaces[0].networkIP
+#     - debug: var=hostvars[groups['elakib'][0]].networkInterfaces[0].networkIP
+
+- hosts: elakib
+  become: yes
+  roles:
+    - Elastic
+    - Kibana
+    - apache
+
+- hosts: be
+  become: yes
+  roles:
+    - {role: psql-install}
+    - {role: psql-ssh}
+    - {role: pgpool-config}
+    - Metricbeat
+
+- hosts: app
+  become: yes
+  roles:
+    - users
+    - op-install
+    - { role: op-config&start, db_addr: "{{ groups['pgpool'][0] }}" } 
+    - Metricbeat

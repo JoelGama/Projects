@@ -1,0 +1,9 @@
+
+production:
+  adapter: postgresql
+  encoding: unicode
+  database: openproject
+  host: {{ hostvars[groups['dbb'][0]].networkInterfaces[0].networkIP }}
+  pool: 5
+  username: openproject
+  password: openproject

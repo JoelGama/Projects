@@ -1,0 +1,78 @@
+---
+- name: Installing Apache - parte I
+  apt:
+    name:
+      - apache2
+
+- name: Installing Apache - parte II
+  shell:
+    cmd: |
+          a2enmod proxy
+          a2enmod proxy_http
+
+- name: Create a symbolic link
+  file:
+    src: /etc/apache2/mods-available/expires.load
+    dest: /etc/apache2/mods-enabled/expires.load
+    state: link
+
+- name: Restart apache2 
+  service:
+   name: apache2
+   state: restarted
+
+- name: Installing Passenger Standalone - part 1
+  apt:
+    name:
+      - dirmngr
+      - gnupg
+
+- name: Installing Passenger Standalone - part 2
+  apt_key:
+    id: 561F9B9CAC40B2F7
+    keyserver: hkp://keyserver.ubuntu.com:80
+
+- name: Installing Passenger Standalone - part 3
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+
+- name: Installing Passenger Standalone - part 4
+  shell:
+    cmd: sh -c 'echo deb https://oss-binaries.phusionpassenger.com/apt/passenger xenial main > /etc/apt/sources.list.d/passenger.list'
+
+- name: Installing Passenger Standalone - part 6
+  apt:
+    name:
+      - passenger
+
+- name: Enable Apache with passenger
+  shell:
+    cmd: |
+          sudo a2enmod passenger
+          sudo apache2ctl restart
+
+- name: Copy conf file
+  blockinfile:
+    path: "/etc/apache2/sites-enabled/openproject.conf"
+    block: |
+      Listen 80
+      <VirtualHost *:80>
+        ServerName apache2
+
+        ProxyPass / http://35.187.24.204:4000/
+        ProxyPassReverse / http://35.187.24.204:4000/
+        ProxyPreserveHost on
+
+        <Proxy *>
+          Order deny,allow
+          Allow from all
+        </Proxy>
+      </VirtualHost>
+  become: yes
+
+- name: Restart apache2 
+  service:
+   name: apache2
+   state: restarted

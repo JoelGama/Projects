@@ -1,0 +1,34 @@
+HTTP:
+
+sudo vi /etc/apache2/http.conf
+escrever : TraceEnable Off
+
+cat /etc/apache2/http.conf
+sudo /etc/init.d/apache2 stop
+sudo /etc/init.d/apache2 start
+
+
+rexecd:
+
+
+sudo vi /etc/inetd.conf 
+comment 'exec'
+
+cat /etc/inetd.conf 
+
+https://kerneltalks.com/howto/how-to-restart-inetd-service-in-linux/
+
+/etc/init.d/xinetd stop 
+/etc/init.d/xinetd start
+
+
+bind shell:
+
+sudo /sbin/iptables -A INPUT -p tcp --dport 1524 -j REJECT
+
+vnc:
+
+sudo vncpasswd /root/.vnc/passwd
+
+8_gh/_A`
+
